@@ -2,6 +2,7 @@ package com.example.demo.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -11,8 +12,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
-import static com.example.demo.security.ApplicationUserRoles.ADMIN;
-import static com.example.demo.security.ApplicationUserRoles.STUDENT;
+import static com.example.demo.security.ApplicationUserPermissions.COURSE_WRITE;
+import static com.example.demo.security.ApplicationUserRoles.*;
 
 @Configuration
 @EnableWebSecurity
@@ -27,12 +28,17 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .csrf().disable() //TODO
                 .authorizeRequests()
                 //whitelisting patterns /(root url), index page, /css(any css), /js(any js) without basic auth
                 .antMatchers("/", "index", "/css/*", "/js/*")
                 //permitting all the above whitelisted urls
                 .permitAll()
-                .antMatchers("api/v1/students/*").hasRole(STUDENT.name())
+                .antMatchers("/api/v1/students/*").hasRole(STUDENT.name())
+                .antMatchers(HttpMethod.DELETE, "/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.POST, "/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.PUT, "/management/api/**").hasAuthority(COURSE_WRITE.name())
+                .antMatchers(HttpMethod.GET, "/management/api/**").hasAnyRole(ADMIN.name(), ADMIN_TRAINEE.name())
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -44,15 +50,24 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
         UserDetails testUser = User.builder()
                 .username("testUser")
                 .password(passwordEncoder.encode("password"))
-                .roles(STUDENT.name()) // ROLE_STUDENT
+                //.roles(STUDENT.name()) // ROLE_STUDENT
+                .authorities(STUDENT.getGrantedAuthorities())
                 .build();
 
         UserDetails adminUser = User.builder()
                 .username("adminUser")
                 .password(passwordEncoder.encode("password123"))
-                .roles(ADMIN.name()) // ROLE_ADMIN
+                //.roles(ADMIN.name()) // ROLE_ADMIN (ability to read and write for management API)
+                .authorities(ADMIN.getGrantedAuthorities())
                 .build();
 
-        return new InMemoryUserDetailsManager(testUser);
+        UserDetails adminTraineeUser = User.builder()
+                .username("adminTraineeUser")
+                .password(passwordEncoder.encode("password123"))
+                //.roles(ADMIN_TRAINEE.name()) // ROLE_ADMIN_TRAINEE (ability to read only for management API)
+                .authorities(ADMIN_TRAINEE.getGrantedAuthorities())
+                .build();
+
+        return new InMemoryUserDetailsManager(testUser,adminUser,adminTraineeUser);
     }
 }

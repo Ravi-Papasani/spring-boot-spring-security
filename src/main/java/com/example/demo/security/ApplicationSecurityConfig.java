@@ -31,26 +31,44 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
         http
-                //.csrf().disable() //TODO
+                .csrf().disable()
+                .authorizeRequests()
+                .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
+                .antMatchers("/api/v1/students/*").hasRole(STUDENT.name())
+                .anyRequest()
+                .authenticated()
+                .and()
+                .formLogin() //Form based authentication
+                .loginPage("/login").permitAll()
+                .defaultSuccessUrl("/courses", true);
+
+
+        /*
+        HTTP BASIC AUTHENTICATION httpBasic()
+        http
+                .csrf().disable()
+                *//*
                 .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .and()
+                *//*
                 .authorizeRequests()
                 //whitelisting patterns /(root url), index page, /css(any css), /js(any js) without basic auth
                 .antMatchers("/", "index", "/css/*", "/js/*")
                 //permitting all the above whitelisted urls
                 .permitAll()
                 .antMatchers("/api/v1/students/*").hasRole(STUDENT.name())
-                /*
+                *//*
                 .antMatchers(HttpMethod.DELETE, "/management/api/**").hasAuthority(COURSE_WRITE.name())
                 .antMatchers(HttpMethod.POST, "/management/api/**").hasAuthority(COURSE_WRITE.name())
                 .antMatchers(HttpMethod.PUT, "/management/api/**").hasAuthority(COURSE_WRITE.name())
                 .antMatchers( "/management/api/**").hasAnyRole(ADMIN.name(), ADMIN_TRAINEE.name())
-                */
+                *//*
                 .anyRequest()
                 .authenticated()
                 .and()
-                .httpBasic();
+                .httpBasic();*/
     }
 
     @Override

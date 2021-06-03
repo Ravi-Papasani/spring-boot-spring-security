@@ -45,12 +45,16 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticated()
                 .and()
                 .formLogin() //Form based authentication
-                .loginPage("/login").permitAll()
-                .defaultSuccessUrl("/courses", true)
+                    .loginPage("/login")
+                    .permitAll()
+                    .defaultSuccessUrl("/courses", true)
+                    .passwordParameter("password") // <input type="password" id="password" name="password"
+                    .usernameParameter("username") // <input type="text" id="username" name="username"
                 .and()
                 .rememberMe()
                     .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
                     .key("secure key md5 hash")
+                    .rememberMeParameter("remember-me")  // <input type="checkbox" id="remember-me"
                 .and()
                 .logout()
                     .logoutUrl("/logout")
